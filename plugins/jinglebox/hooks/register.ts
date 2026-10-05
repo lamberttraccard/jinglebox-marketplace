@@ -50,8 +50,17 @@ const upcoming: Partial<Record<Jingle, number>> = {}
 const permissionHint = (): string =>
   `Add ${READ_TOOLS.map(tool => `"mcp__${settings.server}__${tool}"`).join(', ')} to permissions.allow in ~/.claude/settings.json`
 
-const explain = (error: unknown): string =>
-  /classifier|refused|denied/i.test(String(error)) ? `call refused. ${permissionHint()}` : String(error)
+const explain = (error: unknown): string => {
+  const text = String(error)
+  if (/no connected MCP/i.test(text)) {
+    return `the "${settings.server}" MCP server is not connected: run /mcp, reconnect it, and try again`
+  }
+  if (/classifier|refused|denied/i.test(text)) {
+    return `call refused. ${permissionHint()}`
+  }
+
+  return text
+}
 
 // The last paragraph of an answer asking something of the person.
 const endsWithQuestion = (answer: string): boolean => {

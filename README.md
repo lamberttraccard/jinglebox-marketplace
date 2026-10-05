@@ -80,7 +80,10 @@ It is a plugin of Claude Code **function hooks** (`plugins/jinglebox/hooks/regis
 
 ## Troubleshooting
 
-`/jinglebox debug` runs each step and says which one fails. "call refused" means the permissions of step 2 are missing.
+`/jinglebox debug` runs each step and says which one fails.
+
+- "MCP server is not connected": the Jinglebox MCP server is not connected in this session (it can time out at startup). Run `/mcp`, reconnect `jinglebox`, and try again.
+- "call refused": the permissions of step 2 are missing.
 
 ## License
 
