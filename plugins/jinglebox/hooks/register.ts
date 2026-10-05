@@ -42,7 +42,11 @@ const SAVED_BLOB = /\(([^,()]+),[^)]*\) saved to (\S+?\.bin)/
 
 const READ_TOOLS = ['get-sound', 'search-sounds', 'get-workspace', 'list-workspaces']
 
+// The server this plugin's manifest declares; $.mcp.connect dials it, or answers the name the session already runs it under.
+const MANIFEST_SERVER = 'jinglebox'
+
 let settings: Settings = { workspace: '', server: 'jinglebox', randomMaxMs: 4000 }
+let connectedServer: string | undefined
 let lastNeedsAnswerAt = 0
 const lastPlayed: Partial<Record<Jingle, number>> = {}
 const upcoming: Partial<Record<Jingle, number>> = {}
@@ -95,8 +99,27 @@ function jsonFrom(blocks: Blocks): Record<string, unknown> | undefined {
   return undefined
 }
 
+// The session's name for the Jinglebox server, connected on first use (tools may be deferred until then).
+async function serverName($: Engine): Promise<string> {
+  if (connectedServer !== undefined) {
+    return connectedServer
+  }
+  const connection = await $.mcp.connect(MANIFEST_SERVER).catch(() => undefined)
+  if (connection?.isConnected === true) {
+    connectedServer = connection.server
+
+    return connection.server
+  }
+
+  return settings.server
+}
+
 async function callJinglebox($: Engine, tool: string, args: Record<string, unknown>): Promise<Blocks> {
-  const result = await $.mcp.call(settings.server, tool, args)
+  const server = await serverName($)
+  const result = await $.mcp.call(server, tool, args).catch(error => {
+    connectedServer = undefined
+    throw error
+  })
   if (result.isError) {
     throw new Error(`Jinglebox ${tool} failed`)
   }
@@ -300,7 +323,7 @@ async function prefetch($: Engine): Promise<void> {
 }
 
 async function diagnose($: Engine): Promise<string> {
-  const lines: string[] = [`server=${settings.server}`]
+  const lines: string[] = [`server=${await serverName($)}`]
   try {
     const workspace = await workspaceOf($)
     lines.push(`workspace=${workspace}`)

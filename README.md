@@ -76,13 +76,14 @@ It is a plugin of Claude Code **function hooks** (`plugins/jinglebox/hooks/regis
 - `turn.complete`, at the end of a main-loop turn: `needs-answer` when the answer's last paragraph asks a question, else `long-turn` or `turn-done`.
 - `classic.PermissionRequest`, and `tool.call` on `AskUserQuestion` and `ExitPlanMode`: `needs-answer`, at most once every 3 s.
 - `tool.call` on `Bash`: `tests-passed`, `tests-failed`, `pr-created`.
+- The plugin declares the Jinglebox MCP server in its manifest and connects it with `$.mcp.connect` before its first call, so it works even when the session has not loaded the server's tools yet; when the session already runs the same server (step 1), that connection is reused.
 - Sounds come from the MCP's `get-sound`, are cached in the plugin's store and played with `$.audio.play`. Random picks draw from `search-sounds`, refreshed once a day.
 
 ## Troubleshooting
 
 `/jinglebox debug` runs each step and says which one fails.
 
-- "MCP server is not connected": the Jinglebox MCP server is not connected in this session (it can time out at startup). Run `/mcp`, reconnect `jinglebox`, and try again.
+- "MCP server is not connected": the plugin could not connect the Jinglebox MCP server (network, or the server timed out at startup). Run `/mcp`, reconnect `jinglebox`, and try again.
 - "call refused": the permissions of step 2 are missing.
 
 ## License

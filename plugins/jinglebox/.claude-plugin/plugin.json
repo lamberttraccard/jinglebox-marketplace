@@ -1,6 +1,6 @@
 {
   "name": "jinglebox",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Plays sounds from your Jinglebox workspace on Claude Code events: answer waiting, question waiting, long turn, tests passed or failed, merge request created",
   "author": {
     "name": "Gremy87"
@@ -16,7 +16,7 @@
     "mcp_server": {
       "type": "string",
       "title": "Jinglebox MCP server name",
-      "description": "The name of the Jinglebox MCP server, as /mcp lists it",
+      "description": "Fallback name of the Jinglebox MCP server, as /mcp lists it, when the plugin cannot connect its own",
       "default": "jinglebox"
     },
     "long_turn_seconds": {
@@ -30,6 +30,12 @@
       "title": "Random sounds maximum length (seconds)",
       "description": "A random pick only takes sounds this short or shorter",
       "default": 4
+    }
+  },
+  "mcpServers": {
+    "jinglebox": {
+      "type": "http",
+      "url": "https://jinglebox.app/mcp"
     }
   }
 }
