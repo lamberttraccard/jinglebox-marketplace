@@ -55,10 +55,24 @@ The plugin ships **no audio**. Each machine downloads its sounds through its own
 /jinglebox search <words>                        find sounds and their IDs
 /jinglebox test <event>                          play an event's sound now
 /jinglebox mute | unmute
+/jinglebox export                                your setup as one /jinglebox import line
+/jinglebox import <workspace> <event>=<choice>…  apply a shared setup
 /jinglebox debug                                 check the MCP call, the playback and the cache
 ```
 
 Choices are kept per machine and per workspace, across sessions. A random pick never plays the same sound twice in a row, and the next sound is downloaded ahead so it starts at once. The toast names each sound played, so a random one you like can be pinned with `/jinglebox set`.
+
+## Share a setup
+
+`/jinglebox export` prints your setup as a single line, for instance:
+
+```
+/jinglebox import my-team turn-done=random:fun needs-answer=177 long-turn=339 tests-passed=325 tests-failed=329 pr-created=344
+```
+
+Paste it wherever your team talks; whoever runs it gets the same workspace and sounds, then can change any of them with `/jinglebox set`. A choice is a sound ID (`177`), a list to pick from (`21,349,336`), `random`, or `random:<tag>`. Nothing is hosted: the line is the setup.
+
+Until a workspace is picked (or imported) on an account with several, no sound plays; the plugin says so in a toast, at most once every 10 minutes, like any other failure.
 
 ## Settings
 

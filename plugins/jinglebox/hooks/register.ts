@@ -47,6 +47,8 @@ const MANIFEST_SERVER = 'jinglebox'
 
 let settings: Settings = { workspace: '', server: 'jinglebox', randomMaxMs: 4000 }
 let connectedServer: string | undefined
+const ERROR_TOAST_EVERY_MS = 10 * 60 * 1000
+const toastedErrors: Record<string, number> = {}
 let lastNeedsAnswerAt = 0
 const lastPlayed: Partial<Record<Jingle, number>> = {}
 const upcoming: Partial<Record<Jingle, number>> = {}
@@ -145,7 +147,7 @@ async function workspaceOf($: Engine): Promise<string> {
   const workspaces = await listWorkspaces($)
   const [only] = workspaces
   if (workspaces.length !== 1 || only === undefined) {
-    throw new Error('pick a workspace with /jinglebox workspace <slug>')
+    throw new Error('pick a workspace with /jinglebox workspace <slug>, or paste a /jinglebox import line')
   }
   await $.store.set('workspace', only.slug)
 
@@ -284,6 +286,63 @@ async function prepare($: Engine, jingle: Jingle): Promise<void> {
   upcoming[jingle] = soundId
 }
 
+// The same failure toasts once every 10 minutes, not at every event.
+async function toastError($: Engine, message: string): Promise<void> {
+  const now = await $.clock.now()
+  const last = toastedErrors[message]
+  if (last !== undefined && now - last < ERROR_TOAST_EVERY_MS) {
+    return
+  }
+  toastedErrors[message] = now
+  $.ui.toast(`🎵 Jinglebox: no sound (${message})`)
+}
+
+// The inverse of parseChoice: 177, 21,349,336, random, random:tag.
+function formatChoice(choice: Choice): string {
+  if (typeof choice === 'number') {
+    return String(choice)
+  }
+  if (Array.isArray(choice)) {
+    return choice.join(',')
+  }
+  const { tag } = choice as { tag?: string }
+
+  return tag === undefined ? 'random' : `random:${tag}`
+}
+
+async function exportSetup($: Engine): Promise<string> {
+  const workspace = await workspaceOf($)
+  const pairs = await Promise.all(JINGLES.map(async jingle => `${jingle}=${formatChoice(await choiceFor($, jingle))}`))
+
+  return `/jinglebox import ${workspace} ${pairs.join(' ')}`
+}
+
+// /jinglebox import <workspace> <event>=<choice>...: a whole setup in one line.
+async function importSetup($: Engine, values: readonly string[]): Promise<string> {
+  const [workspace = '', ...pairs] = values
+  const workspaces = await listWorkspaces($)
+  if (!workspaces.some(one => one.slug === workspace)) {
+    return `You have no access to the workspace "${workspace}". Workspaces: ${workspaces.map(one => one.slug).join(', ')}`
+  }
+  const choices: Partial<Record<Jingle, Choice>> = {}
+  for (const pair of pairs) {
+    const [event = '', value = ''] = pair.split('=')
+    const choice = parseChoice(value.startsWith('random:') ? ['random', value.slice('random:'.length)] : [value])
+    if (!isJingle(event) || choice === undefined || choice === 'default') {
+      return `Cannot read "${pair}": expected <event>=<329 | 21,349,336 | random | random:tag>.`
+    }
+    choices[event] = choice
+  }
+  await $.store.set('workspace', workspace)
+  await $.store.set(`sounds:${workspace}`, choices)
+  for (const jingle of JINGLES) {
+    delete upcoming[jingle]
+  }
+  void prefetch($)
+
+  return `Imported: workspace ${workspace}.\n${await describeMapping($, workspace)}`
+}
+
 async function play($: Engine, jingle: Jingle): Promise<void> {
   if ((await $.store.get('muted')) === true) {
     return
@@ -296,7 +355,7 @@ async function play($: Engine, jingle: Jingle): Promise<void> {
     lastPlayed[jingle] = soundId
     audio = await download($, soundId)
   } catch (error) {
-    $.ui.toast(`🎵 ${DESCRIPTIONS[jingle]}: no sound (${explain(error)})`)
+    await toastError($, explain(error))
 
     return
   }
@@ -420,6 +479,8 @@ const USAGE = [
   '/jinglebox search <words>',
   '/jinglebox test <event>',
   '/jinglebox mute | unmute',
+  '/jinglebox export — your setup as one /jinglebox import line to share',
+  '/jinglebox import <workspace> <event>=<choice>... — apply a shared setup',
   '/jinglebox debug',
   `Events: ${JINGLES.join(', ')}`,
 ].join('\n')
@@ -454,6 +515,12 @@ export const register: Register = (on, options) => {
       }
       if (action === 'debug') {
         return { text: await diagnose($) }
+      }
+      if (action === 'export') {
+        return { text: `Share this line; pasting it applies your setup:\n\n${await exportSetup($)}` }
+      }
+      if (action === 'import') {
+        return { text: await importSetup($, rest) }
       }
       if (action === 'workspace') {
         return { text: await chooseWorkspace($, target) }

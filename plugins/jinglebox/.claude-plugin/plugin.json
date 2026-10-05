@@ -1,6 +1,6 @@
 {
   "name": "jinglebox",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Plays sounds from your Jinglebox workspace on Claude Code events: answer waiting, question waiting, long turn, tests passed or failed, merge request created",
   "author": {
     "name": "Gremy87"
