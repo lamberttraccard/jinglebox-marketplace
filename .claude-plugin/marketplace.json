@@ -1,0 +1,14 @@
+{
+  "name": "jinglebox",
+  "owner": {
+    "name": "Jinglebox"
+  },
+  "plugins": [
+    {
+      "name": "jinglebox",
+      "source": "./plugins/jinglebox",
+      "description": "Plays sounds from your Jinglebox workspace on Claude Code events: answer waiting, question waiting, long turn, tests passed or failed, merge request created"
+    }
+  ],
+  "description": "Claude Code plugins for Jinglebox"
+}

@@ -1,0 +1,35 @@
+{
+  "name": "jinglebox",
+  "version": "1.0.0",
+  "description": "Plays sounds from your Jinglebox workspace on Claude Code events: answer waiting, question waiting, long turn, tests passed or failed, merge request created",
+  "author": {
+    "name": "Gremy87"
+  },
+  "license": "MIT",
+  "userConfig": {
+    "workspace": {
+      "type": "string",
+      "title": "Jinglebox workspace slug",
+      "description": "The workspace the sounds come from; empty to pick it with /jinglebox workspace",
+      "default": ""
+    },
+    "mcp_server": {
+      "type": "string",
+      "title": "Jinglebox MCP server name",
+      "description": "The name of the Jinglebox MCP server, as /mcp lists it",
+      "default": "jinglebox"
+    },
+    "long_turn_seconds": {
+      "type": "number",
+      "title": "Long turn threshold (seconds)",
+      "description": "A turn longer than this plays the long-turn sound instead of the turn-done one",
+      "default": 60
+    },
+    "random_max_seconds": {
+      "type": "number",
+      "title": "Random sounds maximum length (seconds)",
+      "description": "A random pick only takes sounds this short or shorter",
+      "default": 4
+    }
+  }
+}
